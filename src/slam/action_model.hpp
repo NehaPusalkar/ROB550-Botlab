@@ -56,6 +56,24 @@ public:
 private:
     
     ////////// TODO: Add private member variables needed for you implementation ///////////////////
+    
+    std :: mt19937 numgen_;
+    bool robot_moved_;
+    bool initialised_;
+    const float a1_;
+    const float a3_;
+    pose_xyt_t prv_odo_;
+
+    double rotation1_;
+    double rotation2_;
+    double translation_;
+    int64_t utime_;
+
+    double stddev_rotation1_;
+    double stddev_rotation2_;
+    double stddev_translation_;
+
+
 };
 
 #endif // SLAM_ACTION_MODEL_HPP
