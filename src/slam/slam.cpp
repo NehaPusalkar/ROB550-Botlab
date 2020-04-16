@@ -260,6 +260,7 @@ void OccupancyGridSLAM::updateLocalization(void)
         }
         else{
             currentPose_  = filter_.updateFilter(currentOdometry_, currentScan_, map_);
+            std::cout<<"pose:"<<currentPose_.x<<" "<<currentPose_.y<<" "<<currentPose_.theta<<std::endl;
         }
         
         auto particles = filter_.particles();

@@ -3,6 +3,7 @@
 #include <lcmtypes/pose_xyt_t.hpp>
 #include <common/angle_functions.hpp>
 #include <cassert>
+#include <stdlib.h>
 
 
 ParticleFilter::ParticleFilter(int numParticles)
@@ -29,7 +30,9 @@ std :: normal_distribution<> dist(0.0,0.01);
         p.pose.utime = pose.utime;
         p.parent_pose = p.pose;
         p.weight = sampleWeight;
-    } 
+        // std::cout<<"initial pose, weight"<<p.pose.x << " "<<p.pose.y<<" "<<p.pose.theta<<" "<< p.weight<<std::endl;
+        
+            } 
     posterior_.back().pose = pose;
 }
 
@@ -44,14 +47,19 @@ pose_xyt_t ParticleFilter::updateFilter(const pose_xyt_t&      odometry,
     
     if(hasRobotMoved)
     {
+        // std::cout<<"start"<<std::endl; 
         auto prior = resamplePosteriorDistribution();
+        // std::cout<<"resampled"<<std::endl;
         auto proposal = computeProposalDistribution(prior);
+        // std::cout<<"proposal done"<<std::endl;
         posterior_ = computeNormalizedPosterior(proposal, laser, map);
+        // std::cout<<"posterior done"<<std::endl;
         posteriorPose_ = estimatePosteriorPose(posterior_);
+        // std::cout<<"got pose"<<std::endl;
     }
     
     posteriorPose_.utime = odometry.utime;
-    
+    //posteriorPose_ = estimatePosteriorPose(posterior_);
     return posteriorPose_;
 }
 
@@ -95,6 +103,30 @@ std::vector<particle_t> ParticleFilter::resamplePosteriorDistribution(void)
     //////////// TODO: Implement your algorithm for resampling from the posterior distribution ///////////////////
     
     std::vector<particle_t> prior;
+    double M_inv = 1.0 / kNumParticles_;
+    double r = ((float)rand() / RAND_MAX)* M_inv;
+    // std::cout<<"r="<<r<<std::endl;
+    double c = posterior_[0].weight;
+    int i = 0;
+    for (int m = 0; m < kNumParticles_; m++) {
+        double U = r + m * M_inv;
+        while (U > c) {
+            
+            i++;
+
+            if(i == posterior_.size()){
+                i--;
+                break;
+            }
+            c = c + posterior_[i].weight;
+           
+        }
+        // std::cout<<"i = "<<i<<std::endl; 
+        // prior.push_back(posterior_[i].pose)
+         prior.push_back(posterior_[i]);
+        // std::cout<<"posterior pose"<<posterior_[i].pose.x << " "<<posterior_[i].pose.y << " "<< posterior_[i].pose.theta<< std::endl; 
+        // std::cout<<"prior pose"<<prior.back().pose.x << " "<<prior.back().pose.y << " "<< prior.back().pose.theta<< std::endl; 
+    }
     return prior;
 }
 
@@ -118,6 +150,29 @@ std::vector<particle_t> ParticleFilter::computeNormalizedPosterior(const std::ve
     /////////// TODO: Implement your algorithm for computing the normalized posterior distribution using the 
     ///////////       particles in the proposal distribution
     std::vector<particle_t> posterior;
+    posterior = proposal;
+    double weight = 0.0;
+    double total_weight = 0.0;
+
+    for (auto&p : posterior) {
+        // std::cout<<"b4 likelihood"<<std::endl;
+        // std::cout<<"pose"<<p.pose.x<< " " << p.pose.y << " "<<p.pose.theta<<std::endl;
+        weight = sensorModel_.likelihood(p, laser, map);
+        // std::cout<<"after likelihood"<<std::endl;
+        p.weight = weight;
+        
+        total_weight += weight;
+        // posterior.push_back(p); 
+    }
+    
+    for (auto&p : posterior) {
+
+        p.weight /= total_weight;
+        // std::cout<<"particle weight = " << p.weight<<std::endl;
+    }
+
+    // assert(false);
+    
     return posterior;
 }
 
@@ -126,5 +181,22 @@ pose_xyt_t ParticleFilter::estimatePosteriorPose(const std::vector<particle_t>& 
 {
     //////// TODO: Implement your method for computing the final pose estimate based on the posterior distribution
     pose_xyt_t pose;
+    float final_x = 0.0;
+    float final_y = 0.0;
+    float theta = 0.0;
+    float sin_theta = 0.0;
+    float cos_theta = 0.0;
+    for (auto&p : posterior) {
+        final_x += p.pose.x;
+        final_y += p.pose.y;
+        sin_theta += p.weight * std ::sin(p.pose.theta);
+        cos_theta += p.weight * std :: cos(p.pose.theta);
+    }
+
+    theta = std:: atan2(sin_theta,cos_theta);
+    pose.x = final_x / (float)kNumParticles_;
+    pose.y = final_y / (float)kNumParticles_;
+
+    pose.theta = theta;
     return pose;
 }
