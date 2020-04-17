@@ -159,18 +159,24 @@ std::vector<particle_t> ParticleFilter::computeNormalizedPosterior(const std::ve
         // std::cout<<"pose"<<p.pose.x<< " " << p.pose.y << " "<<p.pose.theta<<std::endl;
         weight = sensorModel_.likelihood(p, laser, map);
         // std::cout<<"after likelihood"<<std::endl;
+        // std::cout<<"weight"<<weight<<std::endl;
         p.weight = weight;
         
         total_weight += weight;
         // posterior.push_back(p); 
     }
-    
+    std::cout<<"total_weight"<<total_weight<<std::endl;
     for (auto&p : posterior) {
 
         p.weight /= total_weight;
         // std::cout<<"particle weight = " << p.weight<<std::endl;
     }
+    double total_from_particles = 0.0;
+    for (auto&p : posterior) {
+        total_from_particles += p.weight;
+    }
 
+    // std::cout<<"particle total"<<total_from_particles<<std::endl;
     // assert(false);
     
     return posterior;
@@ -187,16 +193,17 @@ pose_xyt_t ParticleFilter::estimatePosteriorPose(const std::vector<particle_t>& 
     float sin_theta = 0.0;
     float cos_theta = 0.0;
     for (auto&p : posterior) {
-        final_x += p.pose.x;
-        final_y += p.pose.y;
+        // std::cout<<"pose: "<<p.pose.x<<" "<<p.pose.y<< " "<<p.pose.theta<<std::endl;
+        final_x += p.weight * p.pose.x;
+        final_y += p.weight * p.pose.y;
         sin_theta += p.weight * std ::sin(p.pose.theta);
         cos_theta += p.weight * std :: cos(p.pose.theta);
     }
 
     theta = std:: atan2(sin_theta,cos_theta);
-    pose.x = final_x / (float)kNumParticles_;
-    pose.y = final_y / (float)kNumParticles_;
-
+    pose.x = final_x ;
+    pose.y = final_y ;
     pose.theta = theta;
+    std::cout<<"final pose:" << pose.x<< " "<< pose.y<< " "<<pose.theta << std::endl;
     return pose;
 }

@@ -9,8 +9,8 @@
     
 // }
 ActionModel::ActionModel(void)
-: a1_(0.0001f)
-, a3_(0.025f)
+: a1_(0.1f)
+, a3_(0.25f)
 , initialised_(false)
 
 {

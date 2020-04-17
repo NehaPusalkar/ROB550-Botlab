@@ -1,6 +1,6 @@
 #ifndef SLAM_SENSOR_MODEL_HPP
 #define SLAM_SENSOR_MODEL_HPP
-
+#include<common/point.hpp>
 class  lidar_t;
 class  OccupancyGrid;
 struct particle_t;
@@ -46,6 +46,7 @@ private:
     float score_frac_;
     float cell_diag_;
     const float  kMaxLaserDistance_;
+    Point<int> Bresenham(int x0, int y0, int x1, int y1);
     double scoreRay(const adjusted_ray_t& ray, const OccupancyGrid& map); 
 
 };
