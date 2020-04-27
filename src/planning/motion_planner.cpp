@@ -27,6 +27,7 @@ robot_path_t MotionPlanner::planPath(const pose_xyt_t& start,
     // If the goal isn't valid, then no path can actually exist
     if(!isValidGoal(goal))
     {
+        
         robot_path_t failedPath;
         failedPath.utime = utime_now();
         failedPath.path_length = 1;
@@ -36,7 +37,7 @@ robot_path_t MotionPlanner::planPath(const pose_xyt_t& start,
 
         return failedPath;
     }
-    
+    // std::cout<<"did not fail"<<std::endl;
     // Otherwise, use A* to find the path
     return search_for_path(start, goal, distances_, searchParams);
 }
@@ -64,6 +65,10 @@ bool MotionPlanner::isValidGoal(const pose_xyt_t& goal) const
         // And is far enough from obstacles that the robot can physically occupy the space
         // Add an extra cell to account for discretization error and make motion a little safer by not trying to
         // completely snuggle up against the walls in the motion plan
+        // MotionPlanner::print_distances();
+        // std::cout<<distances_(goalCell.x, goalCell.y)<<std::endl;
+        // std::cout<<distances_.widthInCells()<<" "<< distances_.heightInCells()<<std::endl;
+        // std::cout<<goalCell.x<<" "<<goalCell.y<<" "<<distances_(goalCell.x, goalCell.y)<<std::endl;
         return distances_(goalCell.x, goalCell.y) > params_.robotRadius;
     }
     
@@ -84,6 +89,8 @@ bool MotionPlanner::isPathSafe(const robot_path_t& path) const
 void MotionPlanner::setMap(const OccupancyGrid& map)
 {
     distances_.setDistances(map);
+    // print_distances();
+
 }
 
 
@@ -92,4 +99,15 @@ void MotionPlanner::setParams(const MotionPlannerParams& params)
     searchParams_.minDistanceToObstacle = params_.robotRadius;
     searchParams_.maxDistanceWithCost = 10.0 * searchParams_.minDistanceToObstacle;
     searchParams_.distanceCostExponent = 1.0;
+}
+
+void MotionPlanner::print_distances()
+{
+    for (int y = 0; y < distances_.heightInCells(); y++)
+    {
+        for(int x = 0; x < distances_.widthInCells();x++)
+        {
+            std::cout << distances_(x,y)<<std::endl; 
+        }
+    }
 }

@@ -191,9 +191,17 @@ void draw_distance_grid(const ObstacleDistanceGrid& grid, float cspaceDistance, 
             int index = x + y*img->stride;
 
             
-            if(grid(x, y) > cspaceDistance) // free space
+            if(grid(x, y) > 0.4f) // free space
             {
                 img->buf[index] = 0xFFFFFFFF; // white
+            }
+            else if((grid(x, y) >= 0.2f)&&(grid(x, y) < 0.3f))
+            {
+                img->buf[index] = 0xFFFF0000; // blue
+            }
+            else if((grid(x, y) >= 0.3f)&&(grid(x, y) <= 0.4f))
+            {
+                img->buf[index] = 0xFF00FF00; // green
             }
             else if(grid(x, y) == 0.0f) // an obstacle
             {

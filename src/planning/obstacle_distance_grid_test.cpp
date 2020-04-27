@@ -132,6 +132,7 @@ bool test_free_space_distances(void)
     {
         for(int x = 0; x < grid.widthInCells(); ++x)
         {
+            //std::cout<<x<< " "<<y<<" "<<grid(x,y)<<std::endl;
             if(grid(x, y) < 0)
             {
                 ++numFreeCells;
@@ -144,7 +145,7 @@ bool test_free_space_distances(void)
                 }
                 else
                 {
-                    std::cout << "FAILED: Expected:" << expectedDist << " Stored:" << distances(x, y) << '\n';
+                   std::cout << "FAILED: Expected:" << expectedDist << " Stored:" << distances(x, y) << '\n';
                 }
             }
         }

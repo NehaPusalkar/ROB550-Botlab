@@ -231,12 +231,12 @@ bool test_saved_poses(const std::string& mapFile, const std::string& posesFile, 
     planner.setMap(grid);
     
     int numCorrect = 0;
-    
+    robot_path_t path;
     for(int n = 0; n < numGoals; ++n)
     {
         poseIn >> start.x >> start.y >> goal.x >> goal.y >> shouldExist;
         
-        robot_path_t path = timed_find_path(start, goal, planner, testName);
+        path = timed_find_path(start, goal, planner, testName);
         if(!animatePath && useGui) lcmConnection.publish(PATH_CHANNEL, &path); // Immediately print out path if no animation flag is sent in
         // See if the generated path was valid
         bool foundPath = path.path_length > 1;

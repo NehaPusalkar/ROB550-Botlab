@@ -152,7 +152,7 @@ private:
     ObstacleDistanceGrid distances_;
     MotionPlannerParams params_;
     SearchParams searchParams_;
-
+    void print_distances();    
     size_t num_frontiers;
     pose_xyt_t prev_goal;
 };
