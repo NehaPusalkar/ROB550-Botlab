@@ -165,7 +165,7 @@ std::vector<particle_t> ParticleFilter::computeNormalizedPosterior(const std::ve
         total_weight += weight;
         // posterior.push_back(p); 
     }
-    std::cout<<"total_weight"<<total_weight<<std::endl;
+    // std::cout<<"total_weight"<<total_weight<<std::endl;
     for (auto&p : posterior) {
 
         p.weight /= total_weight;
@@ -204,6 +204,6 @@ pose_xyt_t ParticleFilter::estimatePosteriorPose(const std::vector<particle_t>& 
     pose.x = final_x ;
     pose.y = final_y ;
     pose.theta = theta;
-    std::cout<<"final pose:" << pose.x<< " "<< pose.y<< " "<<pose.theta << std::endl;
+    // std::cout<<"final pose:" << pose.x<< " "<< pose.y<< " "<<pose.theta << std::endl;
     return pose;
 }

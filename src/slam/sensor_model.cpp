@@ -8,7 +8,7 @@
 SensorModel::SensorModel(void)
 :kMaxLaserDistance_(5.0f)
 ,odds_at_(30.0)
-,score_frac_(0.5)
+,score_frac_(0.50)
 ,cell_diag_(0.0707)
 {
     ///////// TODO: Handle any initialization needed for your sensor model
@@ -39,7 +39,7 @@ double SensorModel::likelihood(particle_t& sample, const lidar_t& scan, const Oc
         // std::cout<<"after score"<<std::endl;
         scanScore += rayScore;
     }
-    std::cout<<"scan score" << scanScore<<std::endl;
+    // std::cout<<"scan score" << scanScore<<std::endl;
     return scanScore;
    // return 1.0;
 }
@@ -111,31 +111,33 @@ double SensorModel::scoreRay(const adjusted_ray_t& ray, const OccupancyGrid& map
         // next_cell.y = static_cast<int>(rayTip.y + cell_diag_ * std::sin(ray.theta)*map.cellsPerMeter());
         // Point<int>next_cell_grid = global_position_to_grid_cell(next_cell,map);
 
-        if (map.logOdds(x,y) > 100) // cell occupied
+        if (map.logOdds(x,y) > 0) // cell occupied
         {
             // std::cout<<"hit"<<std::endl;
-            ray_score = odds_at_; 
+            ray_score =  map.logOdds(x,y);
         } 
         // prev cell coordinates
         
-        else if (map.logOdds(prev.x,prev.y) > 100) // check previous cell
+        else if (map.logOdds(prev.x,prev.y) > 0) // check previous cell
         {   
             // std::cout<<"prev cell"<<map.logOdds(prev.x,prev.y)<<std::endl;
-            ray_score = score_frac_ * odds_at_;
+             ray_score = score_frac_ * map.logOdds(prev.x,prev.y);
+            // ray_score = 0.75 * odds_at_;
 
         }
         //next cell coordinates
         
-        else if(map.logOdds(newp.x,newp.y)>100) // check next cell
+        else if(map.logOdds(newp.x,newp.y)> 0) // check next cell
         {
             // std::cout<<"next cell"<<map.logOdds(newp.x, newp.y)<<std::endl;
-            ray_score = score_frac_ * odds_at_;
+            ray_score = score_frac_ * map.logOdds(newp.x,newp.y);
+            //  ray_score = 0.40 * odds_at_;
         }
 
-        else //still no obstacle
+         else //still no obstacle
         {
             // std::cout<<"nowhere"<<std::endl;
-            ray_score = 0.01 * odds_at_;
+            ray_score = 0.001 * map.logOdds(x,y);
         }
 
         return ray_score;

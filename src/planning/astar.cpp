@@ -139,6 +139,42 @@ bool is_goal_valid(Node& g, const ObstacleDistanceGrid& distances, const SearchP
     return false;
 }
 
+bool is_node_safe(Node& n, const ObstacleDistanceGrid& distances, const SearchParams& params) {
+    if(distances.isCellInGrid(n.cell.x, n.cell.y))
+    {
+        return distances(n.cell.x, n.cell.y) > params.minDistanceToObstacle;
+    }
+    return false;
+}
+
+bool is_safe_cell(int x, int y, double robotRadius, const ObstacleDistanceGrid& distances)
+{
+    // Search a circular region around (x, y). If any of the cells within the robot radius are occupied, then the
+    // cell isn't safe.
+    const int kSafeCellRadius = std::lrint(std::ceil(robotRadius * distances.cellsPerMeter()));
+    
+    for(int dy = -kSafeCellRadius; dy <= kSafeCellRadius; ++dy)
+    {
+        for(int dx = -kSafeCellRadius; dx <= kSafeCellRadius; ++dx)
+        {
+            // Ignore the corners of the square region, where outside the radius of the robot
+            if(std::sqrt(dx*dx + dy*dy) * distances.metersPerCell() > robotRadius)
+            {
+                continue;
+            }
+            
+            // If the odds at the cells are greater than 0, then there's a collision, so the cell isn't safe
+            if(distances(x + dx, y + dy) == 0)
+            {
+                return false;
+            }
+        }
+    }
+    
+    // The area around the cell is free of obstacles, so all is well
+    return true;
+}
+
 bool is_in_map(Node& n, const ObstacleDistanceGrid& distances) {
     int width = distances.widthInCells();
     int height = distances.heightInCells();
@@ -152,23 +188,7 @@ bool is_in_map(Node& n, const ObstacleDistanceGrid& distances) {
 float calc_h_cost(Node& n, Node& g) {
     float x = std::abs(n.cell.x - g.cell.x);
     float y = std::abs(n.cell.y - g.cell.y);
-    // std::cout<<"============={INSIDE HCOST}=============)\n";
-    // std::cout<<"Goal : ("<<g.cell.x<<","<<g.cell.y<<")\n";
-    // std::cout<<"Node : ("<<n.cell.x<<","<<n.cell.y<<")\n";
-    // std::cout<<"hcost dx :"<<x<<std::endl;
-    // std::cout<<"hcost dy :"<<y<<std::endl;
-    // std::cout<<"hcost val:"<<std::sqrt(x*x + y*y)<<std::endl;
-    // std::cout<<"========================================)\n"<<std::endl;
-    // std::cout<<"\n"<<std::endl;
-    // if (x >= y)
-    // {
-    //     return (14 * y + 10 * (x - y));
-    // }
-    // else
-    // {
-    //     return (14 * x + 10 * (y - x));
-    // }
-     return 2* std::sqrt(x*x + y*y);
+   return 2* std::sqrt(x*x + y*y);
     
 }
 
@@ -176,22 +196,14 @@ float calc_h_cost(Node& n, Node& g) {
     float calc_g_cost(Node& to_node, Node& from_node) {
     float x = std::abs(to_node.cell.x - from_node.cell.x);
     float y = std::abs(to_node.cell.y - from_node.cell.y);
-    // if(x == 1 && y == 1)
-    // {
-    //     return (from_node.g_cost + 14);
-    // }
-    // else
-    // {
-    //     return (from_node.g_cost + 10);
-    // }
-     return from_node.g_cost+std::sqrt(x*x + y*y);
+    return from_node.g_cost+std::sqrt(x*x + y*y);
 }
 
 // float get_obstacle_cost(cell_t& c, const ObstacleDistanceGrid& distances)
 float calc_f_cost(Node& n, const ObstacleDistanceGrid& distances, const SearchParams& params) {
     float obstacle_cost = 0.0;
-    if (distances(n.cell.x, n.cell.y) < params.minDistanceToObstacle && 
-        distances(n.cell.x, n.cell.y) > params.maxDistanceWithCost) {
+    if (distances(n.cell.x, n.cell.y) > params.minDistanceToObstacle && 
+        distances(n.cell.x, n.cell.y) < params.maxDistanceWithCost) {
             obstacle_cost = pow(params.maxDistanceWithCost - distances(n.cell.x, n.cell.y), params.distanceCostExponent);
     }
     return n.g_cost + n.h_cost + obstacle_cost;
@@ -210,6 +222,7 @@ void expand_node(Node& n, const ObstacleDistanceGrid& distances, const SearchPar
      bool goal_matched = false;
     
     for(int i = 0; i < 8; i++){
+        
             int x = n.cell.x + xDeltas[i];
             int y = n.cell.y + yDeltas[i];
             Node neighbour;
@@ -218,20 +231,15 @@ void expand_node(Node& n, const ObstacleDistanceGrid& distances, const SearchPar
            
             if (it == searched_list.end())
             {
-                // std::cout<<"here"<<std::endl;
                 neighbour.cell.x = x;
                 neighbour.cell.y = y;
-                // neighbour.parent = NULL;
-                // neighbour.g_cost = 0.0;
-                // neighbour.h_cost = 0.0;
             }
             else 
             {
                  neighbour = *it;
             }
- 
+            
             if ((!is_in_list(neighbour,closed_list)) && is_in_map(neighbour,distances) && (!is_node_obstacle(neighbour,distances))) {
-                // std::cout<<"here"<<std::endl;
                 if(!is_in_list(neighbour,searched_list)) {
                     neighbour.g_cost = calc_g_cost(neighbour, n);
                     neighbour.h_cost = calc_h_cost(neighbour, Goal_node);
@@ -242,7 +250,9 @@ void expand_node(Node& n, const ObstacleDistanceGrid& distances, const SearchPar
                     else {
                         parent_map[neighbour.cell] = n.cell;
                     }
-                    open_list.push(neighbour);
+                    if(is_safe_cell(neighbour.cell.x, neighbour.cell.y,params.minDistanceToObstacle, distances)){
+                        open_list.push(neighbour);
+                    }
                     searched_list.push_back(neighbour);
                 }
                 else if(neighbour.g_cost > calc_g_cost(neighbour, n)) {
@@ -255,7 +265,10 @@ void expand_node(Node& n, const ObstacleDistanceGrid& distances, const SearchPar
                     else {
                         parent_map[neighbour.cell] = n.cell;
                     }
-                    open_list.push(neighbour);
+                    if(is_safe_cell(neighbour.cell.x, neighbour.cell.y,params.minDistanceToObstacle, distances)){
+                        open_list.push(neighbour);
+                    }
+
                 }
             }
             if(is_node_goal(neighbour, Goal_node)){
@@ -346,7 +359,6 @@ robot_path_t extract_path(cell_t& c, const ObstacleDistanceGrid& distances, pose
      // make start_node
     
     Start_node.cell = start_cell;
-    // Start_node.parent = NULL;
     
     // make goal_node
     
@@ -370,10 +382,10 @@ robot_path_t extract_path(cell_t& c, const ObstacleDistanceGrid& distances, pose
     open_list.push(Start_node);
 
     //check if valid goal
-    // std::cout<< "start pose: "<<start.x << " "<< start.y << std::endl;
-    // std::cout<<"start cell: "<<Start_node.cell.x<<" "<<Start_node.cell.y<<std::endl;
-    // std::cout<< "goal pose: "<<goal.x << " "<< goal.y << std::endl;
-    // std::cout<<"goal cell: "<<Goal_node.cell.x<<" "<<Goal_node.cell.y<<std::endl;
+    std::cout<< "start pose: "<<start.x << " "<< start.y << std::endl;
+    std::cout<<"start cell: "<<Start_node.cell.x<<" "<<Start_node.cell.y<<std::endl;
+    std::cout<< "goal pose: "<<goal.x << " "<< goal.y << std::endl;
+    std::cout<<"goal cell: "<<Goal_node.cell.x<<" "<<Goal_node.cell.y<<std::endl;
 
      while(!open_list.empty()) {
         Node current_node = open_list.top();
@@ -384,11 +396,7 @@ robot_path_t extract_path(cell_t& c, const ObstacleDistanceGrid& distances, pose
             path_found = true;
             // robot_path_t final_path = extract_path(current_node, distances, start);
             robot_path_t final_path = extract_path(current_node.cell, distances, start);
-            if(path_found) {
-                // std::cout <<" path found" << std::endl;
-            }
-            // std::cout<<"returning final path"<<std::endl;
-            // print_path(final_path);
+            
             return final_path;
         }
        

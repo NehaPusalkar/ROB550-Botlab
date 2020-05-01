@@ -9,8 +9,10 @@
     
 // }
 ActionModel::ActionModel(void)
-: a1_(0.1f)
-, a3_(0.25f)
+: a1_(12.5f)
+, a2_(0.01f)
+, a3_(0.025f)
+, a4_(1.0f)
 , initialised_(false)
 
 {
@@ -43,9 +45,9 @@ bool ActionModel::updateAction(const pose_xyt_t& odometry)
         translation_ = -translation_;
     }
     rotation2_ = angle_diff(dtheta,rotation1_);
-    stddev_rotation1_ = a1_ * pow(rotation1_,2);
-    stddev_rotation2_ = a1_ * pow(rotation2_,2);
-    stddev_translation_ = a3_ * pow(translation_,2);
+    stddev_rotation1_ = a1_ * pow(rotation1_,2) + a2_ * pow(translation_,2);
+    stddev_rotation2_ = a1_ * pow(rotation2_,2) + a2_ * pow(translation_,2);
+    stddev_translation_ = a3_ * pow(translation_,2) + a4_ * pow(rotation1_,2) + a4_ * pow(rotation2_,2);
     prv_odo_ = odometry;
     if((dX != 0.0) || (dY != 0.0) || (dtheta != 0.0)) {
         robot_moved_ = true;

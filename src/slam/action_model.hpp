@@ -61,7 +61,9 @@ private:
     bool robot_moved_;
     bool initialised_;
     const float a1_;
+    const float a2_;
     const float a3_;
+    const float a4_;
     pose_xyt_t prv_odo_;
 
     double rotation1_;
