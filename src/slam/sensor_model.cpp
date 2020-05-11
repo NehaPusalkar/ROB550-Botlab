@@ -121,8 +121,8 @@ double SensorModel::scoreRay(const adjusted_ray_t& ray, const OccupancyGrid& map
         else if (map.logOdds(prev.x,prev.y) > 0) // check previous cell
         {   
             // std::cout<<"prev cell"<<map.logOdds(prev.x,prev.y)<<std::endl;
-             ray_score = score_frac_ * map.logOdds(prev.x,prev.y);
-            // ray_score = 0.75 * odds_at_;
+            //  ray_score = score_frac_ * map.logOdds(prev.x,prev.y);
+            ray_score = 0.60 * map.logOdds(prev.x,prev.y);
 
         }
         //next cell coordinates
@@ -130,14 +130,14 @@ double SensorModel::scoreRay(const adjusted_ray_t& ray, const OccupancyGrid& map
         else if(map.logOdds(newp.x,newp.y)> 0) // check next cell
         {
             // std::cout<<"next cell"<<map.logOdds(newp.x, newp.y)<<std::endl;
-            ray_score = score_frac_ * map.logOdds(newp.x,newp.y);
-            //  ray_score = 0.40 * odds_at_;
+            // ray_score = score_frac_ * map.logOdds(newp.x,newp.y);
+             ray_score = 0.60 * map.logOdds(newp.x,newp.y);
         }
 
          else //still no obstacle
         {
             // std::cout<<"nowhere"<<std::endl;
-            ray_score = 0.001 * map.logOdds(x,y);
+            ray_score = 0.1 * map.logOdds(x,y);
         }
 
         return ray_score;

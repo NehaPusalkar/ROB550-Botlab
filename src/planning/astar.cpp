@@ -16,41 +16,11 @@ typedef Point<int> cell_t;
 
    struct Node {
             cell_t cell;
-            // struct Node* parent;
-            // std::shared_ptr<struct Node> parent;
+            
             float g_cost = 0.0;
             float h_cost = 0.0;
             float f_cost = 0.0;
-            // float get_f_cost() = get_get_f_cost();
-
-            // float get_f_cost() const
-            // {   
-                
-            //     return g_cost + h_cost;
-            // }
-            // bool operator<(const Node& rhs) const
-            // {
-            //     return get_f_cost() < rhs.get_f_cost();
-            // }
-
-            // bool operator>(const Node& rhs) const
-            // {
-            //     return get_f_cost() > rhs.get_f_cost();
-            // }
-            // bool operator!=(const Node& rhs) const
-            // {
-            //     return (cell.x != rhs.cell.x) || (cell.y != rhs.cell.y)  || (get_f_cost() != rhs.get_f_cost()) || (g_cost != rhs.g_cost) || (h_cost != rhs.h_cost);
-            // } 
-
-            // bool operator==(const Node& rhs) const
-            // {
-            //     return (cell.x == rhs.cell.x) && (cell.y == rhs.cell.y) && (get_f_cost() == rhs.get_f_cost()) && (g_cost == rhs.g_cost) && (h_cost == rhs.h_cost);
-            // }
-            // float get_f_cost() const
-            // {   
-                
-            //     return g_cost + h_cost;
-            // }
+            
             bool operator<(const Node& rhs) const
             {
                 return f_cost < rhs.f_cost;
@@ -282,15 +252,12 @@ void expand_node(Node& n, const ObstacleDistanceGrid& distances, const SearchPar
 robot_path_t extract_path(cell_t& c, const ObstacleDistanceGrid& distances, pose_xyt_t start) {
     robot_path_t path;
     path.utime = start.utime;
-    // Node current_node = n;
-    // std::cout << "printing start coordinates : "<<Start_node.cell.x<<" "<<Start_node.cell.y<<std::endl;
+    
     while(!is_cell_equal(c,Start_node.cell)){
-    // std::cout<<"in while of extract path"<<std::endl;
-    // std::cout<<"n node coordinates: "<<n.cell.x << " "<< n.cell.y<<std::endl; 
+  
         pose_xyt_t pose;
         Point <double>grid_point;
-        // grid_point.x = (double)n.cell.x;
-        // grid_point.y = (double)n.cell.y;
+
         grid_point.x = (double)c.x;
         grid_point.y = (double)c.y;
         Point <double> global_point;
@@ -301,11 +268,11 @@ robot_path_t extract_path(cell_t& c, const ObstacleDistanceGrid& distances, pose
         // strcpy(n, n.parent);
         c = parent_map[c];
         //  n = *n.parent;
-        path.path.push_back(pose);
+         path.path.push_back(pose);
         // std::cout<<"nx,ny="<<n.cell.x<<","<<n.cell.y<<std::endl;
         // std::cout<<"path_length:"<<path.path.size()<<std::endl;
-            // if(!is_node_equal(n,Start_node)){
-            //     n = *n.parent;
+            // if(!is_cell_equal(c,Start_node.cell)){
+            //     c = parent_map[c];
             //     path.path.push_back(pose);
             // }        
     

@@ -64,6 +64,8 @@ private:
     const float a2_;
     const float a3_;
     const float a4_;
+    // const float k1_;
+    // const float k2_;
     pose_xyt_t prv_odo_;
 
     double rotation1_;

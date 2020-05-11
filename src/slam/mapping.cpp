@@ -28,53 +28,57 @@ void Mapping::updateMap(const lidar_t& scan, const pose_xyt_t& pose, OccupancyGr
     previousPose_ = pose;
     for(auto& ray : movingScan)
     {
-        Point<float>ray_start_in_grid = global_position_to_grid_position(ray.origin, map); 
-        Point <int> ray_end;
-        ray_end.x = static_cast<int>(ray.range * std::cos(ray.theta) * map.cellsPerMeter() + ray_start_in_grid.x);
-        ray_end.y = static_cast<int>(ray.range * std::sin(ray.theta) * map.cellsPerMeter() + ray_start_in_grid.y);
         scoreEndpoint(ray, map);
-        Point<int>ray_start = global_position_to_grid_cell(ray.origin, map);
-        
+    }
+
+    for(auto& ray : movingScan)
+    {
+        scoreRay(ray, map);
+    }
+
+        // Point<double>ray_start_in_grid = global_position_to_grid_position(ray.origin, map);
+        // Point <int> ray_end;
+        // ray_end.x = static_cast<int>(ray.range * std::cos(ray.theta) * map.cellsPerMeter() + ray_start_in_grid.x);
+        // ray_end.y = static_cast<int>(ray.range * std::sin(ray.theta) * map.cellsPerMeter() + ray_start_in_grid.y);
+        // Point<int>ray_start = global_position_to_grid_cell(ray.origin, map);
+
        
-        //breshenham's algorithm
-        int x1 = ray_end.x;
-        int y1 = ray_end.y;
-        int x0 = ray_start.x;
-        int y0 = ray_start.y;
-        int dx = fabs(x1 - x0);
-        int dy = fabs(y1 - y0);
-        int sx = x0 < x1 ? 1 : -1;
-        int sy = y0 < y1 ? 1 : -1;
-        int err = dx - dy;
-        int x = x0;
-        int y = y0;
+        // //breshenham's algorithm
+        // int x1 = ray_end.x;
+        // int y1 = ray_end.y;
+        // int x0 = ray_start.x;
+        // int y0 = ray_start.y;
+        // int dx = fabs(x1 - x0);
+        // int dy = fabs(y1 - y0);
+        // int sx = x0 < x1 ? 1 : -1;
+        // int sy = y0 < y1 ? 1 : -1;
+        // int err = dx - dy;
+        // int x = x0;
+        // int y = y0;
 
-        while (x != x1 || y != y1) 
-        {
-            updateOdds(x,y, map);
-            int e2 = 2 * err;
-            if(e2 >= -dy)
-            {
-                err -= dy;
-                x += sx;
-            }
+        // while (x != x1 || y != y1) 
+        // {
+        //     updateOdds(x,y, map);
+        //     int e2 = 2 * err;
+        //     if(e2 >= -dy)
+        //     {
+        //         err -= dy;
+        //         x += sx;
+        //     }
 
-            if(e2 <= dx) 
-            {
-                err += dx;
-                y += sy;
-            }
-        }
+        //     if(e2 <= dx) 
+        //     {
+        //         err += dx;
+        //         y += sy;
+        //     }
+        // }
     }
     
 
 
-    //for(auto& ray : movingScan)
-    // {
-    //     scoreRay(ray, map);
-    // }
+    
 
-}
+
 
 void Mapping :: scoreEndpoint(const adjusted_ray_t& ray, OccupancyGrid& map){
     if(ray.range <=kMaxLaserDistance_)
@@ -92,32 +96,79 @@ void Mapping :: scoreEndpoint(const adjusted_ray_t& ray, OccupancyGrid& map){
     }
 }
 
+
+void Mapping :: scoreRay(const adjusted_ray_t& ray, OccupancyGrid& map){
+     if(ray.range <=kMaxLaserDistance_)
+    {
+        Point<float> rayStart = global_position_to_grid_position(ray.origin, map);
+        Point<int> rayEnd;
+
+        rayEnd.x = static_cast<int>(ray.range * std::cos(ray.theta) * map.cellsPerMeter() + rayStart.x);
+        rayEnd.y = static_cast<int>(ray.range * std::sin(ray.theta) * map.cellsPerMeter() + rayStart.y);
+
+        // Point <int>
+        int x0 = static_cast<int>(rayStart.x);
+        int y0 = static_cast<int>(rayStart.y);
+        int x1 = rayEnd.x;
+        int y1 = rayEnd.y;
+        int dx = fabs(x1 - x0);
+        int dy = fabs(y1 - y0);
+        int sx = x0 < x1 ? 1 : -1;
+        int sy = y0 < y1 ? 1 : -1;
+        int err = dx - dy;
+        int x = x0;
+        int y = y0;
+        while (x != x1 || y != y1) 
+        {
+            decreaseCellOdds(x,y, map);
+            int e2 = 2 * err;
+            if(e2 >= -dy)
+            {
+                err -= dy;
+                x += sx;
+            }
+
+            if(e2 <= dx) 
+            {
+                err += dx;
+                y += sy;
+            }
+        }
+
+    }
+}
+
 void Mapping :: increaseCellOdds(int x, int y, OccupancyGrid& map){
     if (!initialized_){
         //do nothing
     }
     //current cell not at max
-    else if (std :: numeric_limits<CellOdds>:: max() - map(x,y) > kHitOdds_){
+    // else if (std :: numeric_limits<CellOdds>:: max() - map(x,y) > kHitOdds_){
+        else if (127 - map(x,y) > kHitOdds_){
        map(x,y) += kHitOdds_;
     }
     //current cell already saturated
     else
     {
-       map(x,y) = std ::numeric_limits<CellOdds>::max();
+    //    map(x,y) = std ::numeric_limits<CellOdds>::max();
+    map(x,y) = 127;
     }
 }
 
 
-void Mapping :: updateOdds(int x, int y, OccupancyGrid& map) {
+void Mapping :: decreaseCellOdds(int x, int y, OccupancyGrid& map) {
     if (!initialized_){
         //do nothing
     }
-     else if (fabs(std :: numeric_limits<CellOdds>:: min() - map(x,y)) > kMissOdds_)
+    //  else if (fabs(std :: numeric_limits<CellOdds>:: min() - map(x,y)) > kMissOdds_)
+     else if (map(x,y) - (-127) > kMissOdds_)
      {
        map(x,y) -= kMissOdds_;
     }
       else
     {
-       map(x,y) = std ::numeric_limits<CellOdds>::min();
+    //    map(x,y) = std ::numeric_limits<CellOdds>::min();
+    map(x,y) = -127;
+
     }
 }

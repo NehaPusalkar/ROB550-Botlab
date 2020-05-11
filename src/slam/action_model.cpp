@@ -10,9 +10,9 @@
 // }
 ActionModel::ActionModel(void)
 : a1_(12.5f)
-, a2_(0.01f)
-, a3_(0.025f)
-, a4_(1.0f)
+, a2_(100.8f)
+, a3_(0.5f)
+, a4_(0.025f)
 , initialised_(false)
 
 {
@@ -35,25 +35,38 @@ bool ActionModel::updateAction(const pose_xyt_t& odometry)
     translation_ = std::sqrt(pow(dX,2) + pow(dY,2));
     rotation1_ = angle_diff(std::atan2(dY,dX),prv_odo_.theta);
     
-    utime_ = odometry.utime;
-    if(std::abs(translation_) < 0.0001f){
+    double dir = 1.0;
+    if(std::abs(translation_) < 0.0001){
         rotation1_ = 0.0f;
 
     }
-    if(std::abs(rotation1_ > M_PI/2.0)){
+    if(std::abs(rotation1_) > M_PI/2.0){
         rotation1_ = angle_diff(M_PI,rotation1_);
-        translation_ = -translation_;
+        dir = -1.0;
     }
     rotation2_ = angle_diff(dtheta,rotation1_);
     stddev_rotation1_ = a1_ * pow(rotation1_,2) + a2_ * pow(translation_,2);
     stddev_rotation2_ = a1_ * pow(rotation2_,2) + a2_ * pow(translation_,2);
     stddev_translation_ = a3_ * pow(translation_,2) + a4_ * pow(rotation1_,2) + a4_ * pow(rotation2_,2);
-    prv_odo_ = odometry;
+
+    // stddev_rotation1_ = k1_ * std::abs(rotation1_);
+    // stddev_translation_ = k2_ * std::abs(translation_);
+    // stddev_rotation2_ = k1_ * std::abs(rotation2_);
+    // stddev_rotation1_ = a1_ * pow(rotation1_,2) ;
+    // stddev_rotation2_ = a1_ * pow(rotation2_,2);
+    // stddev_translation_ = a3_ * pow(translation_,2);
+   
     if((dX != 0.0) || (dY != 0.0) || (dtheta != 0.0)) {
         robot_moved_ = true;
-        return true;
+        // return true;
     }
-       return false;
+    else {
+        robot_moved_ = false;
+    }
+    prv_odo_ = odometry;
+    translation_ = dir * translation_;
+    utime_ = odometry.utime;
+       return robot_moved_;
     
 
     }
@@ -71,6 +84,10 @@ particle_t ActionModel::applyAction(const particle_t& sample)
         double rot1_hat = std::normal_distribution<>(rotation1_, stddev_rotation1_)(numgen_);
         double rot2_hat = std::normal_distribution<>(rotation2_, stddev_rotation2_)(numgen_);
         double trans_hat = std::normal_distribution<>(translation_, stddev_translation_)(numgen_);
+        
+        // double epsilon1 = std::normal_distribution<>(0, stddev_rotation1_)(numgen_);
+        // double epsilon2 = std::normal_distribution<>(0, stddev_translation_)(numgen_);
+        // double epsilon3 = std::normal_distribution<>(0, stddev_rotation2_)(numgen_);
         new_samp.pose.utime = utime_;
         new_samp.parent_pose = sample.pose;
         new_samp.pose.x += trans_hat * cos(sample.pose.theta + rot1_hat);
